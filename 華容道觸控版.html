@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>華容道遊戲</title>
+    <style>
+        .game-container {
+            width: 230px;
+            height: 380px;
+            margin: 20px auto;
+            position: relative;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            touch-action: none; /* 防止瀏覽器的默認觸控行為 */
+        }
+
+        .level-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            padding: 5px;
+            background: #f8f8f8;
+            border-radius: 4px;
+        }
+
+        .board {
+            width: 206px;
+            height: 270px;
+            position: relative;
+            background: #ddd;
+            border: 4px solid #333;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-line-vertical {
+            width: 1px;
+            height: 100%;
+        }
+
+        .grid-line-horizontal {
+            width: 100%;
+            height: 1px;
+        }
+
+        .piece {
+            position: absolute;
+            border: 2px solid #333;
+            background: #c43a31;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            touch-action: none;
+        }
+
+        .piece:hover {
+            filter: brightness(1.1);
+        }
+
+        .piece.active {
+            filter: brightness(1.2);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .caocao {
+            width: 96px;
+            height: 96px;
+            background: #e74c3c;
+            font-size: 20px;
+        }
+
+        .vertical {
+            width: 46px;
+            height: 96px;
+            background: #3498db;
+        }
+
+        .horizontal {
+            width: 96px;
+            height: 46px;
+            background: #2ecc71;
+        }
+
+        .small {
+            width: 46px;
+            height: 46px;
+            background: #f1c40f;
+        }
+
+        .exit {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 10px;
+            background: #e74c3c;
+            border: 2px solid #333;
+            box-sizing: border-box;
+        }
+
+        .moves {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 16px;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .level-selector {
+            text-align: center;
+            margin-top: 10px;
+            padding: 5px;
+        }
+
+        .level-selector button {
+            display: inline-block;
+            margin: 1px 5px;
+            padding: 5px 10px;
+        }
+
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .victory-message {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        .victory-title {
+            color: #e74c3c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .victory-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .celebrating {
+            animation: celebrate 0.5s ease-in-out;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                width: 280px;
+                height: 460px;
+            }
+
+            .board {
+                width: 250px;
+                height: 328px;
+            }
+
+            .piece {
+                font-size: 16px;
+            }
+
+            .caocao {
+                width: 116px;
+                height: 116px;
+            }
+
+            .vertical {
+                width: 56px;
+                height: 116px;
+            }
+
+            .horizontal {
+                width: 116px;
+                height: 56px;
+            }
+
+            .small {
+                width: 56px;
+                height: 56px;
+            }
+
+            .level-selector button {
+                padding: 8px 12px;
+                margin: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="level-title">第一關：橫刀立馬</div>
+        <div class="board" id="board">
+            <div class="grid" id="grid"></div>
+            <div class="exit"></div>
+        </div>
+        <div class="moves">移動次數: <span id="moveCount">0</span></div>
+        <button onclick="resetGame()">重新開始</button>
+        <div class="level-selector">
+            <button onclick="switchLevel(1)">關卡 1</button>
+            <button onclick="switchLevel(2)">關卡 2</button>
+            <button onclick="switchLevel(3)">關卡 3</button>
+            <button onclick="switchLevel(4)">關卡 4</button>
+            <button onclick="switchLevel(5)">關卡 5</button>
+            <button onclick="switchLevel(6)">關卡 6</button>
+        </div>
+    </div>
+
+    <div class="victory-overlay" id="victoryOverlay">
+        <div class="victory-message">
+            <div class="victory-title">恭喜過關！</div>
+            <div class="victory-text">
+                曹操成功突圍而出！<br>
+                總共移動次數：<span id="finalMoveCount">0</span>次
+            </div>
+            <button onclick="resetGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        let moveCount = 0;
+        let selectedPiece = null;
+        let pieces = [];
+        let currentLevel = 1;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        const levelTitles = {
+            level1: "第一關：橫刀立馬",
+            level2: "第二關：兵分三路",
+            level3: "第三關：四面楚歌",
+            level4: "第四關：指揮若定",
+            level5: "第五關：一路進軍",
+            level6: "第六關：屯兵東路"
+        };
+
+        const allLevels = {
+    // 關卡 1：橫刀立馬
+    level1: [
+        { type: 'caocao', x: 1, y: 0, width: 2, height: 2, id: 'caocao', name: '曹操' },     
+        { type: 'vertical', x: 0, y: 0, width: 1, height: 2, id: 'v1', name: '趙雲' },       
+        { type: 'vertical', x: 3, y: 0, width: 1, height: 2, id: 'v2', name: '張飛' },       
+        { type: 'horizontal', x: 1, y: 2, width: 2, height: 1, id: 'h1', name: '關羽' },     
+        { type: 'vertical', x: 0, y: 2, width: 1, height: 2, id: 'v3', name: '黃忠' },       
+        { type: 'vertical', x: 3, y: 2, width: 1, height: 2, id: 'v4', name: '馬超' },       
+        { type: 'small', x: 1, y: 3, width: 1, height: 1, id: 's1', name: '卒' },           
+        { type: 'small', x: 2, y: 3, width: 1, height: 1, id: 's2', name: '卒' },           
+        { type: 'small', x: 0, y: 4, width: 1, height: 1, id: 's3', name: '卒' },           
+        { type: 'small', x: 3, y: 4, width: 1, height: 1, id: 's4', name: '卒' }            
+    ],
+
+    // 關卡 2：兵分三路
+    level2: [
+        { type: 'caocao', x: 1, y: 0, width: 2, height: 2, id: 'caocao', name: '曹操' },    
+        { type: 'small', x: 1, y: 2, width: 1, height: 1, id: 's1', name: '卒' },           
+        { type: 'small', x: 2, y: 2, width: 1, height: 1, id: 's2', name: '卒' },           
+        { type: 'horizontal', x: 1, y: 3, width: 2, height: 1, id: 'h1', name: '關羽' },    
+        { type: 'small', x: 0, y: 0, width: 1, height: 1, id: 's3', name: '卒' },           
+        { type: 'small', x: 3, y: 0, width: 1, height: 1, id: 's4', name: '卒' },           
+        { type: 'vertical', x: 0, y: 1, width: 1, height: 2, id: 'v1', name: '黃忠' },      
+        { type: 'vertical', x: 0, y: 3, width: 1, height: 2, id: 'v2', name: '馬超' },      
+        { type: 'vertical', x: 3, y: 1, width: 1, height: 2, id: 'v3', name: '張飛' },      
+        { type: 'vertical', x: 3, y: 3, width: 1, height: 2, id: 'v4', name: '趙雲' }       
+    ],
+
+    // 修改第三關的配置
+    level3: [
+        { type: 'caocao', x: 1, y: 1, width: 2, height: 2, id: 'caocao', name: '曹操' },     // 中間的曹操
+        { type: 'vertical', x: 0, y: 0, width: 1, height: 2, id: 'v1', name: '黃忠' },       // 左上方黃忠
+        { type: 'vertical', x: 0, y: 3, width: 1, height: 2, id: 'v2', name: '張飛' },       // 左下方張飛
+        { type: 'vertical', x: 3, y: 0, width: 1, height: 2, id: 'v3', name: '趙雲' },       // 右上方趙雲
+        { type: 'vertical', x: 3, y: 2, width: 1, height: 2, id: 'v4', name: '馬超' },       // 右下方馬超
+        { type: 'horizontal', x: 1, y: 3, width: 2, height: 1, id: 'h1', name: '關羽' },     // 曹操下方的關羽
+        { type: 'small', x: 1, y: 0, width: 1, height: 1, id: 's3', name: '卒' },           // 中間上方的卒
+        { type: 'small', x: 2, y: 0, width: 1, height: 1, id: 's4', name: '卒' },            // 中間上方的卒
+        { type: 'small', x: 3, y: 4, width: 1, height: 1, id: 's3', name: '卒' },           // 馬超下方的卒
+        { type: 'small', x: 0, y: 2, width: 1, height: 1, id: 's4', name: '卒' }            // 黃忠和張飛中間的卒
+    ],
+
+    // 關卡 4：指揮若定
+    level4: [
+        { type: 'caocao', x: 1, y: 0, width: 2, height: 2, id: 'caocao', name: '曹操' },     // 曹操置頂
+        { type: 'small', x: 0, y: 2, width: 1, height: 1, id: 's1', name: '卒' },           // 左上角卒
+        { type: 'small', x: 3, y: 2, width: 1, height: 1, id: 's2', name: '卒' },           // 右上角卒
+        { type: 'small', x: 1, y: 3, width: 1, height: 1, id: 's3', name: '卒' },           // 曹操下方左卒
+        { type: 'small', x: 2, y: 3, width: 1, height: 1, id: 's4', name: '卒' },           // 曹操下方右卒
+        { type: 'horizontal', x: 1, y: 2, width: 2, height: 1, id: 'h1', name: '關羽' },    // 改為1x2的關羽
+        { type: 'vertical', x: 0, y: 0, width: 1, height: 2, id: 'v1', name: '黃忠' },      // 新增的黃忠
+        { type: 'vertical', x: 0, y: 3, width: 1, height: 2, id: 'v2', name: '張飛' },      // 張飛位置不變
+        { type: 'vertical', x: 3, y: 0, width: 1, height: 2, id: 'v3', name: '趙雲' },      // 趙雲位置不變
+        { type: 'vertical', x: 3, y: 3, width: 1, height: 2, id: 'v4', name: '馬超' }       // 馬超位置不變
+    ],
+	// 關卡 5：一路進軍
+    level5: [
+        { type: 'caocao', x: 1, y: 0, width: 2, height: 2, id: 'caocao', name: '曹操' },     // 曹操置頂
+        { type: 'small', x: 3, y: 0, width: 1, height: 1, id: 's1', name: '卒' },           // 左上角卒
+        { type: 'small', x: 3, y: 1, width: 1, height: 1, id: 's2', name: '卒' },           // 右上角卒
+        { type: 'small', x: 3, y: 2, width: 1, height: 1, id: 's3', name: '卒' },           // 曹操下方左卒
+        { type: 'small', x: 3, y: 3, width: 1, height: 1, id: 's4', name: '卒' },           // 曹操下方右卒
+        { type: 'horizontal', x: 1, y: 4, width: 2, height: 1, id: 'h1', name: '關羽' },    // 改為1x2的關羽
+        { type: 'vertical', x: 0, y: 0, width: 1, height: 2, id: 'v1', name: '黃忠' },      // 新增的黃忠
+        { type: 'vertical', x: 0, y: 2, width: 1, height: 2, id: 'v2', name: '張飛' },      // 張飛位置不變
+        { type: 'vertical', x: 1, y: 2, width: 1, height: 2, id: 'v3', name: '趙雲' },      // 趙雲位置不變
+        { type: 'vertical', x: 2, y: 2, width: 1, height: 2, id: 'v4', name: '馬超' }       // 馬超位置不變
+    ],
+	// 關卡 6：屯兵東路
+    level6: [
+        { type: 'caocao', x: 0, y: 0, width: 2, height: 2, id: 'caocao', name: '曹操' },     // 曹操置頂
+        { type: 'small', x: 2, y: 2, width: 1, height: 1, id: 's1', name: '卒1' },           // 卒1
+        { type: 'small', x: 3, y: 2, width: 1, height: 1, id: 's2', name: '卒2' },           // 卒2
+        { type: 'small', x: 2, y: 3, width: 1, height: 1, id: 's3', name: '卒3' },           // 卒3
+        { type: 'small', x: 3, y: 3, width: 1, height: 1, id: 's4', name: '卒4' },           // 卒4
+        { type: 'horizontal', x: 0, y: 2, width: 2, height: 1, id: 'h1', name: '關羽' },    // 關羽
+        { type: 'vertical', x: 1, y: 3, width: 1, height: 2, id: 'v1', name: '黃忠' },      // 黃忠
+        { type: 'vertical', x: 2, y: 0, width: 1, height: 2, id: 'v2', name: '張飛' },      // 張飛位置
+        { type: 'vertical', x: 3, y: 0, width: 1, height: 2, id: 'v3', name: '趙雲' },      // 趙雲位置
+        { type: 'vertical', x: 0, y: 3, width: 1, height: 2, id: 'v4', name: '馬超' }       // 馬超位置
+    ]
+};
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 1; i < 4; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line grid-line-vertical';
+                line.style.left = `${i * 25}%`;
+                grid.appendChild(line);
+            }
+            for (let i = 1; i < 5; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line grid-line-horizontal';
+                line.style.top = `${i * 20}%`;
+                grid.appendChild(line);
+            }
+        }
+
+        function createPiece(config) {
+            const piece = document.createElement('div');
+            piece.className = `piece ${config.type}`;
+            piece.id = config.id;
+            piece.style.left = `${config.x * 50}px`;
+            piece.style.top = `${config.y * 50}px`;
+            piece.innerHTML = config.name;
+
+            // 添加觸控事件監聽器
+            piece.addEventListener('touchstart', handleTouchStart, { passive: false });
+            piece.addEventListener('touchmove', handleTouchMove, { passive: false });
+            piece.addEventListener('touchend', handleTouchEnd);
+
+            // 保留滑鼠事件支援
+            piece.addEventListener('mousedown', handleMouseDown);
+
+            return piece;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            selectedPiece = pieces.find(p => p.element === e.target);
+            if (selectedPiece) {
+                selectedPiece.element.classList.add('active');
+                selectedPiece.startX = selectedPiece.x;
+                selectedPiece.startY = selectedPiece.y;
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                selectedPiece.element.style.zIndex = '1000';
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!selectedPiece) return;
+
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+            
+            // 移動閾值（格子的一半）
+            const moveThreshold = 25;
+
+            // 判斷主要移動方向
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // 水平移動
+                if (Math.abs(deltaX) >= moveThreshold) {
+                    const direction = deltaX > 0 ? 1 : -1;
+                    let newX = selectedPiece.x + direction;
+                    
+                    // 邊界檢查
+                    const maxX = 4 - selectedPiece.width;
+                    newX = Math.max(0, Math.min(newX, maxX));
+
+                    // 檢查新位置是否有效
+                    if (newX !== selectedPiece.x && isPositionEmpty(newX, selectedPiece.y, selectedPiece)) {
+                        selectedPiece.element.style.left = `${newX * 50}px`;
+                        selectedPiece.x = newX;
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+                    }
+                }
+            } else {
+                // 垂直移動
+                if (Math.abs(deltaY) >= moveThreshold) {
+                    const direction = deltaY > 0 ? 1 : -1;
+                    let newY = selectedPiece.y + direction;
+
+                    // 邊界檢查
+                    const maxY = 5 - selectedPiece.height;
+                    newY = Math.max(0, Math.min(newY, maxY));
+
+                    // 檢查新位置是否有效
+                    if (newY !== selectedPiece.y && isPositionEmpty(selectedPiece.x, newY, selectedPiece)) {
+                        selectedPiece.element.style.top = `${newY * 50}px`;
+                        selectedPiece.y = newY;
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+                    }
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (selectedPiece) {
+                selectedPiece.element.classList.remove('active');
+                selectedPiece.element.style.zIndex = '1';
+                if (selectedPiece.startX !== selectedPiece.x || 
+                    selectedPiece.startY !== selectedPiece.y) {
+                    moveCount++;
+                    updateMoveCount();
+                    checkWin();
+                }
+                selectedPiece = null;
+            }
+        }
+
+        function handleMouseDown(e) {
+            e.preventDefault();
+            selectedPiece = pieces.find(p => p.element === e.target);
+            if (selectedPiece) {
+                selectedPiece.element.classList.add('active');
+                selectedPiece.startX = selectedPiece.x;
+                selectedPiece.startY = selectedPiece.y;
+                selectedPiece.initialMouseX = e.clientX;
+                selectedPiece.initialMouseY = e.clientY;
+                selectedPiece.element.style.zIndex = '1000';
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            }
+        }
+
+        function handleMouseMove(e) {
+            if (!selectedPiece) return;
+
+            const deltaX = e.clientX - selectedPiece.initialMouseX;
+            const deltaY = e.clientY - selectedPiece.initialMouseY;
+
+            // 移動閾值（格子的一半）
+            const moveThreshold = 25;
+
+            // 判斷主要移動方向
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // 水平移動
+                if (Math.abs(deltaX) >= moveThreshold) {
+                    const direction = deltaX > 0 ? 1 : -1;
+                    let newX = selectedPiece.x + direction;
+                    
+                    // 邊界檢查
+                    const maxX = 4 - selectedPiece.width;
+                    newX = Math.max(0, Math.min(newX, maxX));
+
+                    // 檢查新位置是否有效
+                    if (newX !== selectedPiece.x && isPositionEmpty(newX, selectedPiece.y, selectedPiece)) {
+                        selectedPiece.element.style.left = `${newX * 50}px`;
+                        selectedPiece.x = newX;
+                        selectedPiece.initialMouseX = e.clientX;
+                        selectedPiece.initialMouseY = e.clientY;
+                    }
+                }
+            } else {
+                // 垂直移動
+                if (Math.abs(deltaY) >= moveThreshold) {
+                    const direction = deltaY > 0 ? 1 : -1;
+                    let newY = selectedPiece.y + direction;
+
+                    // 邊界檢查
+                    const maxY = 5 - selectedPiece.height;
+                    newY = Math.max(0, Math.min(newY, maxY));
+
+                    // 檢查新位置是否有效
+                    if (newY !== selectedPiece.y && isPositionEmpty(selectedPiece.x, newY, selectedPiece)) {
+                        selectedPiece.element.style.top = `${newY * 50}px`;
+                        selectedPiece.y = newY;
+                        selectedPiece.initialMouseX = e.clientX;
+                        selectedPiece.initialMouseY = e.clientY;
+                    }
+                }
+            }
+        }
+
+        function handleMouseUp() {
+            if (selectedPiece) {
+                selectedPiece.element.classList.remove('active');
+                selectedPiece.element.style.zIndex = '1';
+                if (selectedPiece.startX !== selectedPiece.x || 
+                    selectedPiece.startY !== selectedPiece.y) {
+                    moveCount++;
+                    updateMoveCount();
+                    checkWin();
+                }
+            }
+            selectedPiece = null;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        function isPositionEmpty(newX, newY, movingPiece) {
+            // 邊界檢查
+            if (newX < 0 || newY < 0 || 
+                newX + movingPiece.width > 4 || 
+                newY + movingPiece.height > 5) {
+                return false;
+            }
+
+            // 檢查與其他棋子的碰撞
+            for (let other of pieces) {
+                if (other === movingPiece) continue;
+
+                if (!(newX >= other.x + other.width ||
+                    newX + movingPiece.width <= other.x ||
+                    newY >= other.y + other.height ||
+                    newY + movingPiece.height <= other.y)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+
+        function checkWin() {
+            const caocao = pieces.find(p => p.type === 'caocao');
+            if (caocao.x === 1 && caocao.y === 3) {
+                showVictoryMessage();
+            }
+        }
+
+        function showVictoryMessage() {
+            const overlay = document.getElementById('victoryOverlay');
+            document.getElementById('finalMoveCount').textContent = moveCount;
+            overlay.style.display = 'flex';
+            
+            const caocaoPiece = document.getElementById('caocao');
+            caocaoPiece.classList.add('celebrating');
+        }
+
+        function resetGame() {
+            const overlay = document.getElementById('victoryOverlay');
+            overlay.style.display = 'none';
+            initializeGame(currentLevel);
+        }
+
+        function switchLevel(levelNum) {
+            currentLevel = levelNum;
+            initializeGame(levelNum);
+        }
+
+        function initializeGame(levelNumber = 1) {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            const grid = document.createElement('div');
+            grid.className = 'grid';
+            grid.id = 'grid';
+            board.appendChild(grid);
+            
+            const exit = document.createElement('div');
+            exit.className = 'exit';
+            board.appendChild(exit);
+            
+            createGrid();
+            
+            document.querySelector('.level-title').textContent = levelTitles[`level${levelNumber}`];
+
+            const levelConfig = allLevels[`level${levelNumber}`];
+            pieces = levelConfig.map(config => {
+                const piece = createPiece(config);
+                board.appendChild(piece);
+                return {
+                    element: piece,
+                    ...config
+                };
+            });
+            
+            moveCount = 0;
+            updateMoveCount();
+            
+            document.getElementById('victoryOverlay').style.display = 'none';
+        }
+
+        // 禁用瀏覽器默認的觸控行為
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // 初始化遊戲
+        initializeGame();
+    </script>
+</body>
+</html>
